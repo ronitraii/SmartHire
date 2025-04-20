@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Results</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+    <h1>Resume Analysis Results</h1>
+
+    <p><strong>Email:</strong> {{ email }}</p>
+    <p><strong>Phone:</strong> {{ phone }}</p>
+    <p><strong>Address:</strong> {{ address }}</p>
+    <p><strong>Matched Skills:</strong> {{ skills }}</p>
+    <p><strong>Match Percentage:</strong> {{ percentage }}%</p>
+
+   
+
+    <h3>Visualizations:</h3>
+    <img src="{{ url_for('static', filename='bar_chart.png') }}" alt="Bar Chart">
+    <img src="{{ url_for('static', filename='pie_chart.png') }}" alt="Pie Chart">
+    <!-- 🔹 Final Summary Statement -->
+    <h2 style="color: black;">
+        The candidate's resume skills are 
+        <strong style="color: darkred;">{{ percentage }}%</strong> 
+        matched with the job requirements.
+    </h2>
+    
+    <br><br>
+    <a href="/">Go Back</a>
+</body>
+</html>
