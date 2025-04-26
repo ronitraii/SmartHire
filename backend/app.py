@@ -11,6 +11,7 @@ from fuzzywuzzy import process
 from pdf2image import convert_from_path
 import pytesseract
 from PIL import Image
+from fuzzywuzzy import fuzz
 
 app = Flask(__name__)
 
@@ -19,7 +20,9 @@ synonym_dict = {
     "machine learning": ["ml", "deep learning", "artificial intelligence"],
     "data analysis": ["data analytics", "business intelligence"],
     "nlp": ["natural language processing"],
-    "sql": ["structured query language"]
+    "sql": ["structured query language", "mysql", "postgresql", "oracle sql", "ms sql", "sqlite", "pl/sql"],
+    "c++": ["c plus plus", "cpp", "c++"],  # Add more synonyms for C++
+    "web development": ["web dev", "frontend", "backend", "full-stack", "web development"]  # Add more synonyms for Web Dev
 }
 
 # Set your Poppler path (for Windows, adjust as needed)
@@ -58,8 +61,8 @@ def extract_text_from_docx(docx_path):
     return text.lower()
 
 # Extract Resume Information
-def extract_resume_info(text, job_keywords):
-    name = extract_name(text)
+def extract_resume_info(text, job_keywords, filename=""):
+    name = extract_name(text, filename)
 
     # Email extraction
     email_match = re.search(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}", text)
@@ -83,39 +86,126 @@ def extract_resume_info(text, job_keywords):
 
     return name, email, phone, address, skills
 
-# Placeholder Name Extraction
-def extract_name(text):
-    lines = text.split("\n")
+# ============ Name Extracting Technique ==============
+import re
+import os
 
-    for line in lines:
-        if re.match(r"^(name|full name|applicant):", line, re.IGNORECASE):
-            return line.split(":")[-1].strip()
+def extract_name(text, filename=""):
+    """
+    Enhanced name extraction:
+    1. Try to extract from filename first.
+    2. Match extracted name in resume text.
+    3. If not matched, fall back to pattern-based extraction.
+    """
+    clean_filename = clean_and_extract_name_from_filename(filename)
+    
+    if clean_filename and name_appears_in_text(clean_filename, text):
+        return clean_filename
+    
+    name_from_text = extract_name_from_text(text)
+    if name_from_text != "Name Not Found":
+        return name_from_text
+    
+    return clean_filename if clean_filename else "Name Not Found"
 
-    for line in lines:
-        words = line.strip().split()
-        if len(words) > 1 and all(word[0].isupper() for word in words[:2]):
-            return " ".join(words[:2])
+def clean_and_extract_name_from_filename(filename):
+    if not filename:
+        return None
+    base = os.path.splitext(filename)[0]
+    base = re.sub(r'\b(cv|resume|vitae|profile|application)\b', '', base, flags=re.IGNORECASE)
+    clean = re.sub(r'[^a-zA-Z\s-]', '', base).strip()
+    
+    # Try to split concatenated names (e.g., "ronitrai" -> "ronit rai")
+    clean = split_concatenated_names(clean)
 
-    for line in lines:
-        if line.strip():
-            return line.strip()
+    parts = [p for p in re.split(r'[\s-]+', clean) if p]
+    if len(parts) >= 2:
+        if all(word.istitle() or word.isupper() for word in parts[:2]):
+            return ' '.join(parts[:2]).title()
+    return None
 
-    return "Unknown"
+def split_concatenated_names(text):
+    # Look for patterns where two capitalized words are stuck together
+    pattern = r'([a-z])([A-Z])'  # Matches a lowercase letter followed by an uppercase letter
+    text = re.sub(pattern, r'\1 \2', text)  # Insert a space between the lowercase and uppercase letter
+
+    return text
+
+def name_appears_in_text(name, text):
+    if not name or not text:
+        return False
+    variations = [
+        name,
+        name.upper(),
+        name.replace(' ', '  '),
+        name.replace(' ', '-')
+    ]
+    return any(v in text for v in variations)
+
+def extract_name_from_text(text):
+    lines = [line.strip() for line in text.split('\n') if line.strip()]
+    if lines and lines[0].isupper() and 2 <= len(lines[0].split()) <= 3:
+        candidate = lines[0].title()
+        if not has_contact_info(candidate):
+            return candidate
+    name_labels = ["name:", "full name:", "applicant:"]
+    for line in lines[:10]:
+        line_lower = line.lower()
+        for label in name_labels:
+            if label in line_lower:
+                name = line[line_lower.index(label)+len(label):].strip()
+                if name and not has_contact_info(name):
+                    return name.title()
+    for line in lines[:10]:
+        if is_strong_name_candidate(line):
+            return line.title()
+    return "Name Not Found"
+
+def is_strong_name_candidate(text):
+    words = text.split()
+    return (2 <= len(words) <= 3 and
+            all(word[0].isupper() for word in words) and
+            not has_contact_info(text) and
+            not any(len(word) == 1 for word in words))
+
+def has_contact_info(text):
+    contact_terms = ['@', 'http', 'github', 'linkedin', 'phone', 'tel', 'mobile']
+    return (re.search(r'\d', text) or
+            any(term in text.lower() for term in contact_terms))
+# =====================================================
 
 # Normalize Skills using Synonyms
 def normalize_skills(resume_skills):
     normalized_resume_skills = set()
+    unknown_skills = set()
+
     for skill in resume_skills:
+        skill_lower = skill.lower()
         matched = False
         for key, synonyms in synonym_dict.items():
-            if skill in synonyms or skill == key:
+            if skill_lower == key or skill_lower in synonyms:
                 normalized_resume_skills.add(key)
                 matched = True
                 break
+            if not matched:
+                for synonym in synonyms + [key]:
+                    if fuzz.partial_ratio(skill_lower, synonym) >= 80:
+                        normalized_resume_skills.add(key)
+                        matched = True
+                        break
+            if matched:
+                break
         if not matched:
-            normalized_resume_skills.add(skill)
-    return normalized_resume_skills
+            normalized_resume_skills.add(skill_lower)
+            unknown_skills.add(skill_lower)  # 👈 catch unknown skills here!
 
+    # 🔥 Save unknown/misspelled skills to a file
+    if unknown_skills:
+        with open("misspelled_skills_log.txt", "a") as f:
+            for s in unknown_skills:
+                f.write(s + "\n")
+
+    return normalized_resume_skills
 # Generate Matched vs Missing Visualization
 def generate_visualization(matched_skills, missing_skills, match_percentage, filename_prefix):
     skills = list(matched_skills) + list(missing_skills)
@@ -161,40 +251,51 @@ def generate_ranking_chart(candidate_results, filename="static/top_candidates.pn
     plt.savefig(filename)
     plt.close()
 
-# Process a Single Resume
-def process_single_resume(resume_path, job_keywords):
-    print(f"[INFO] Processing resume: {resume_path}")
-    
-    if resume_path.endswith(".pdf"):
-        resume_text = extract_text_from_pdf(resume_path)
-    elif resume_path.endswith(".docx"):
-        resume_text = extract_text_from_docx(resume_path)
-    else:
-        print("[ERROR] Unsupported file type.")
-        return None, None, None, None, None, None, None
+# Process Multiple Resumes
+def process_multiple_resumes(resumes, job_keywords):
+    results = []
+    for resume_path in resumes:
+        print(f"[INFO] Processing resume: {resume_path}")
+        if resume_path.endswith(".pdf"):
+            resume_text = extract_text_from_pdf(resume_path)
+        elif resume_path.endswith(".docx"):
+            resume_text = extract_text_from_docx(resume_path)
+        else:
+            print("[ERROR] Unsupported file type.")
+            continue
 
-    if not resume_text.strip():
-        print("[WARNING] Resume text is empty after extraction!")
-        return "Unknown", "Not Found", "Not Found", "Not Found", set(), 0, set()
+        if not resume_text.strip():
+            print("[WARNING] Resume text is empty after extraction!")
+            continue
 
-    name, email, phone, address, resume_skills = extract_resume_info(resume_text, job_keywords)
-    normalized_resume_skills = normalize_skills(resume_skills)
+        filename = os.path.basename(resume_path)
+        name, email, phone, address, resume_skills = extract_resume_info(resume_text, job_keywords, filename=filename)
+        normalized_resume_skills = normalize_skills(resume_skills)
 
-    final_matched_skills = set()
-    for job_skill in job_keywords:
-        result = process.extractOne(job_skill, normalized_resume_skills)
-        if result:
-            match, score = result
-            if score >= 85:
-                final_matched_skills.add(job_skill)
+        final_matched_skills = set()
+        for job_skill in job_keywords:
+            result = process.extractOne(job_skill, normalized_resume_skills)
+            if result:
+                match, score = result
+                if score >= 85:
+                    final_matched_skills.add(job_skill)
 
-    match_percentage = (len(final_matched_skills) / len(job_keywords)) * 100 if job_keywords else 0
-    missing_skills = set(job_keywords) - final_matched_skills
+        match_percentage = (len(final_matched_skills) / len(job_keywords)) * 100 if job_keywords else 0
+        missing_skills = set(job_keywords) - final_matched_skills
 
-    filename_prefix = os.path.splitext(os.path.basename(resume_path))[0]
-    generate_visualization(final_matched_skills, missing_skills, match_percentage, filename_prefix)
+        filename_prefix = os.path.splitext(os.path.basename(resume_path))[0]
+        generate_visualization(final_matched_skills, missing_skills, match_percentage, filename_prefix)
 
-    return name, email, phone, address, final_matched_skills, match_percentage, missing_skills
+        results.append({
+            "name": name,
+            "email": email,
+            "phone": phone,
+            "address": address,
+            "skills": final_matched_skills,
+            "percentage": match_percentage
+        })
+
+    return results
 
 # Flask Route
 @app.route("/", methods=["GET", "POST"])
@@ -207,23 +308,18 @@ def index():
             return "Please enter at least one job skill!"
 
         files = request.files.getlist("resumes")
-        results = []
+        file_paths = []
 
         for file in files:
             filepath = os.path.join("uploads", file.filename)
             file.save(filepath)
+            file_paths.append(filepath)
 
-            name, email, phone, address, matched_skills, match_percentage, missing_skills = process_single_resume(filepath, job_keywords)
+        results = process_multiple_resumes(file_paths, job_keywords)
+
+        # Clean up the uploaded files
+        for filepath in file_paths:
             os.remove(filepath)
-
-            results.append({
-                "name": name,
-                "email": email,
-                "phone": phone,
-                "address": address,
-                "skills": matched_skills,
-                "percentage": match_percentage
-            })
 
         sorted_results = sorted(results, key=lambda x: x["percentage"], reverse=True)
         top_candidates = sorted_results[:10]
