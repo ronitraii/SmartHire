@@ -61,6 +61,7 @@ def extract_text_from_docx(docx_path):
 def extract_resume_info(text, job_keywords):
     name = extract_name(text)
 
+    # Email extraction
     email_match = re.search(r"[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}", text)
     email = email_match.group(0) if email_match else "Not Found"
 
