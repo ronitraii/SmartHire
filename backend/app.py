@@ -16,35 +16,14 @@ from fuzzywuzzy import fuzz
 app = Flask(__name__)
 
 # Synonym Dictionary for Skill Matching
-# Synonym Dictionary for Skill Matching
 synonym_dict = {
     "machine learning": ["ml", "deep learning", "artificial intelligence"],
     "data analysis": ["data analytics", "business intelligence"],
     "nlp": ["natural language processing"],
     "sql": ["structured query language", "mysql", "postgresql", "oracle sql", "ms sql", "sqlite", "pl/sql"],
-    "c++": ["c plus plus", "cpp", "c++"],
-    "web development": ["web dev", "frontend", "backend", "full-stack", "web development"]
+    "c++": ["c plus plus", "cpp", "c++"],  # Add more synonyms for C++
+    "web development": ["web dev", "frontend", "backend", "full-stack", "web development"]  # Add more synonyms for Web Dev
 }
-
-# Skill Headings for detecting skill sections
-skill_headings = [
-    "skills",
-    "technical skills",
-    "soft skills",
-    "additional skills",
-    "professional skills",
-    "programming skills",
-    "programming languages",
-    "languages",
-    "tools",
-    "technologies",
-    "expertise",
-    "proficiencies",
-    "side skills",
-    "key skills",
-    "strengths",
-    "technical proficiency"
-]
 
 # Set your Poppler path (for Windows, adjust as needed)
 poppler_path = r"C:\Program Files\poppler-24.08.0\Library\bin"
@@ -81,27 +60,6 @@ def extract_text_from_docx(docx_path):
     text = "\n".join([para.text for para in doc.paragraphs])
     return text.lower()
 
-def extract_skill_section(text):
-    """
-    Find and return skill-related section from resume text.
-    Only capture lines after skill headings like 'Technical Skills', 'Soft Skills', etc.
-    """
-    lines = [line.strip() for line in text.split('\n') if line.strip()]
-    skill_section = []
-    capture = False
-    for line in lines:
-        line_lower = line.lower()
-        if any(heading in line_lower for heading in skill_headings):
-            capture = True
-            continue  # skip the heading line itself
-        elif capture:
-            # Stop if new major section like Experience, Education starts
-            if len(line) == 0 or any(x in line_lower for x in ["experience", "education", "project", "certification", "profile summary", "summary"]):
-                break
-            skill_section.append(line)
-
-    return ' '.join(skill_section)
-
 # Extract Resume Information
 def extract_resume_info(text, job_keywords, filename=""):
     name = extract_name(text, filename)
@@ -120,13 +78,10 @@ def extract_resume_info(text, job_keywords, filename=""):
     )
     address = address_match.group(0) if address_match else "Not Found"
 
-    # ✨ Use only skill section now
-    skill_text = extract_skill_section(text)
-
     skills = []
     for s in job_keywords:
         pattern = r"\b" + re.escape(s.lower()) + r"\b"
-        if re.search(pattern, skill_text.lower()):
+        if re.search(pattern, text.lower()):
             skills.append(s)
 
     return name, email, phone, address, skills
