@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resume Analysis Results</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        :root {
+            --primary: #6200ee;
+            --primary-dark: #3700b3;
+            --primary-light: #bb86fc;
+            --secondary: #03dac6;
+            --background: #121212;
+            --surface: rgba(255, 255, 255, 0.1);
+            --error: #cf6679;
+            --success: #4caf50;
+            --warning: #ff9800;
+            --on-primary: #ffffff;
+            --on-secondary: #000000;
+            --on-background: #ffffff;
+            --on-surface: #ffffff;
+            --on-error: #000000;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Roboto', Arial, sans-serif;
+            line-height: 1.6;
+            color: var(--on-background);
+            background: linear-gradient(45deg, #121212, #1e1e1e);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            font-weight: 300;
+            font-size: 2.5rem;
+            text-align: center;
+            margin-bottom: 30px;
+            color: var(--primary-light);
+            text-shadow: 0 0 10px rgba(187, 134, 252, 0.3);
+        }
+        
+        h2 {
+            font-weight: 400;
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+            color: var(--secondary);
+        }
+        
+        .card {
+            background: var(--surface);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3), 
+                        0 1px 1px rgba(255, 255, 255, 0.1) inset;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(
+                to bottom right,
+                rgba(255, 255, 255, 0.08) 0%,
+                rgba(255, 255, 255, 0.03) 25%,
+                rgba(255, 255, 255, 0) 50%
+            );
+            pointer-events: none;
+            transform: rotate(-30deg);
+            z-index: 0;
+        }
+        
+        .profile {
+            display: flex;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        
+        .profile-icon {
+            width: 80px;
+            height: 80px;
+            background: var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 20px;
+            box-shadow: 0 5px 15px rgba(98, 0, 238, 0.5);
+        }
+        
+        .profile-icon i {
+            font-size: 2.5rem;
+            color: var(--on-primary);
+        }
+        
+        .profile-info {
+            flex: 1;
+        }
+        
+        .profile-info h2 {
+            margin-bottom: 5px;
+        }
+        
+        .profile-info p {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 1.1rem;
+            margin-bottom: 5px;
+        }
+        
+        .status {
+            font-size: 1.2rem;
+            padding: 10px 20px;
+            border-radius: 30px;
+            display: inline-block;
+            margin-bottom: 30px;
+        }
+        
+        .status.approved {
+            background: rgba(76, 175, 80, 0.2);
+            color: var(--success);
+            border: 1px solid rgba(76, 175, 80, 0.3);
+        }
+        
+        .status.rejected {
+            background: rgba(207, 102, 121, 0.2);
+            color: var(--error);
+            border: 1px solid rgba(207, 102, 121, 0.3);
+        }
+        
+        .charts-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 30px;
+            margin-bottom: 30px;
+        }
+        
+        .chart-wrapper {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            padding: 20px;
+            height: 300px;
+            position: relative;
+        }
+        
+        .skills-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+        
+        .skills-table th,
+        .skills-table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .skills-table th {
+            color: var(--secondary);
+            font-weight: 500;
+            letter-spacing: 0.5px;
+        }
+        
+        .match-icon {
+            font-size: 1.2rem;
+        }
+        
+        .match-icon.yes {
+            color: var(--success);
+        }
+        
+        .match-icon.no {
+            color: var(--error);
+        }
+        
+        .btn {
+            background: var(--primary);
+            color: var(--on-primary);
+            border: none;
+            padding: 12px 25px;
+            font-size: 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(98, 0, 238, 0.3);
+            margin-right: 10px;
+        }
+        
+        .btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(98, 0, 238, 0.4);
+        }
+        
+        .btn-back {
+            background: transparent;
+            border: 1px solid var(--primary-light);
+            color: var(--primary-light);
+            box-shadow: none;
+        }
+        
+        .btn-back:hover {
+            background: rgba(187, 134, 252, 0.1);
+            box-shadow: none;
+        }
+        
+        .btn i {
+            margin-right: 8px;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.9rem;
+        }
+        
+        @media (max-width: 768px) {
+            .charts-container {
+                grid-template-columns: 1fr;
+            }
+            
+            .profile {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .profile-icon {
+                margin-right: 0;
+                margin-bottom: 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Resume Analysis Results</h1>
+        
+        <div class="card">
+            <div class="profile">
+                <div class="profile-icon">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div class="profile-info">
+                    <h2>{{ result.name }}</h2>
+                    <p><i class="fas fa-envelope"></i> {{ result.email }}</p>
+                    <p><i class="fas fa-phone"></i> {{ result.phone }}</p>
+                    <p><i class="fas fa-map-marker-alt"></i> {{ result.address }}</p>
+                </div>
+            </div>
+            
+            <div class="status {% if result.approved %}approved{% else %}rejected{% endif %}">
+                {% if result.approved %}
+                <i class="fas fa-check-circle"></i> APPROVED
+                {% else %}
+                <i class="fas fa-times-circle"></i> REJECTED
+                {% endif %}
+                ({{ result.match_percentage }}% Match)
+            </div>
+            
+            <h2>Skills Assessment</h2>
+            <div class="charts-container">
+                <div class="chart-wrapper">
+                    <canvas id="pieChart"></canvas>
+                </div>
+                <div class="chart-wrapper">
+                    <canvas id="barChart"></canvas>
+                </div>
+            </div>
+            
+            <table class="skills-table">
+                <thead>
+                    <tr>
+                        <th>Skill</th>
+                        <th>Match Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for skill in result.skills %}
+                    <tr>
+                        <td>{{ skill.skill }}</td>
+                        <td>
+                            {% if skill.present %}
+                            <span class="match-icon yes"><i class="fas fa-check"></i> Yes</span>
+                            {% else %}
+                            <span class="match-icon no"><i class="fas fa-times"></i> No</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            
+            <div>
+                <!-- <a href="/top-candidates" class="btn"><i class="fas fa-trophy"></i> Show Top 3 Candidates</a> -->
+                <a href="/" class="btn btn-back"><i class="fas fa-arrow-left"></i> Back to Search</a>
+            </div>
+        </div>
+        
+        <div class="footer">
+            Resume Skills Analyzer • by Unsa Memon
+        </div>
+    </div>
+
+    <script>
+        // Data from Flask template
+        const result = {{ result|tojson }};
+        
+        // Count matched and unmatched skills
+        const matchedSkills = result.skills.filter(skill => skill.present).length;
+        const unmatchedSkills = result.skills.filter(skill => !skill.present).length;
+        
+        // Create skill labels
+        const skillLabels = result.skills.map(skill => skill.skill);
+        const matchStatus = result.skills.map(skill => skill.present ? 1 : 0);
+        
+        // Create pie chart
+        const pieCtx = document.getElementById('pieChart').getContext('2d');
+        const pieChart = new Chart(pieCtx, {
+            type: 'pie',
+            data: {
+                labels: ['Matched Skills', 'Missing Skills'],
+                datasets: [{
+                    data: [matchedSkills, unmatchedSkills],
+                    backgroundColor: [
+                        'rgba(76, 175, 80, 0.7)',
+                        'rgba(207, 102, 121, 0.7)'
+                    ],
+                    borderColor: [
+                        'rgba(76, 175, 80, 1)',
+                        'rgba(207, 102, 121, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            color: 'rgba(255, 255, 255, 0.7)'
+                        }
+                    },
+                    title: {
+                        display: true,
+                        text: 'Skills Match Percentage',
+                        color: 'rgba(255, 255, 255, 0.7)',
+                        font: {
+                            size: 16
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Create bar chart
+        const barCtx = document.getElementById('barChart').getContext('2d');
+        const barChart = new Chart(barCtx, {
+            type: 'bar',
+            data: {
+                labels: skillLabels,
+                datasets: [{
+                    label: 'Skills Match',
+                    data: matchStatus,
+                    backgroundColor: matchStatus.map(status => 
+                        status ? 'rgba(76, 175, 80, 0.7)' : 'rgba(207, 102, 121, 0.7)'
+                    ),
+                    borderColor: matchStatus.map(status => 
+                        status ? 'rgba(76, 175, 80, 1)' : 'rgba(207, 102, 121, 1)'
+                    ),
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        max: 1,
+                        ticks: {
+                            stepSize: 1,
+                            callback: function(value) {
+                                return value === 0 ? 'No' : 'Yes';
+                            },
+                            color: 'rgba(255, 255, 255, 0.7)'
+                        },
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.1)'
+                        }
+                    },
+                    x: {
+                        ticks: {
+                            color: 'rgba(255, 255, 255, 0.7)'
+                        },
+                        grid: {
+                            color: 'rgba(255, 255, 255, 0.1)'
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        display: false
+                    },
+                    title: {
+                        display: true,
+                        text: 'Skills Breakdown',
+                        color: 'rgba(255, 255, 255, 0.7)',
+                        font: {
+                            size: 16
+                        }
+                    }   
+                }
+            }
+        });
+    </script>
+</body>
+</html>

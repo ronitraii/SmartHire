@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resume Skills Analyzer</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6200ee;
+            --primary-dark: #3700b3;
+            --primary-light: #bb86fc;
+            --secondary: #03dac6;
+            --background: #121212;
+            --surface: rgba(255, 255, 255, 0.1);
+            --error: #cf6679;
+            --on-primary: #ffffff;
+            --on-secondary: #000000;
+            --on-background: #ffffff;
+            --on-surface: #ffffff;
+            --on-error: #000000;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Roboto', Arial, sans-serif;
+            line-height: 1.6;
+            color: var(--on-background);
+            background: linear-gradient(45deg, #121212, #1e1e1e);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            font-weight: 300;
+            font-size: 2.5rem;
+            text-align: center;
+            margin-bottom: 30px;
+            color: var(--primary-light);
+            text-shadow: 0 0 10px rgba(187, 134, 252, 0.3);
+        }
+        
+        .card {
+            background: var(--surface);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3), 
+                        0 1px 1px rgba(255, 255, 255, 0.1) inset;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(
+                to bottom right,
+                rgba(255, 255, 255, 0.08) 0%,
+                rgba(255, 255, 255, 0.03) 25%,
+                rgba(255, 255, 255, 0) 50%
+            );
+            pointer-events: none;
+            transform: rotate(-30deg);
+            z-index: 0;
+        }
+        
+        .form-group {
+            margin-bottom: 25px;
+            position: relative;
+            z-index: 1;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 500;
+            color: var(--on-surface);
+            letter-spacing: 0.5px;
+        }
+        
+        input[type="text"], input[type="file"] {
+            width: 100%;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            color: var(--on-surface);
+            font-size: 1rem;
+            transition: all 0.3s ease;
+            outline: none;
+        }
+        
+        input[type="text"]:focus {
+            border-color: var(--primary-light);
+            box-shadow: 0 0 0 2px rgba(187, 134, 252, 0.3);
+        }
+        
+        input[type="file"] {
+            cursor: pointer;
+            padding: 12px;
+        }
+        
+        input[type="file"]::file-selector-button {
+            background: var(--primary);
+            color: var(--on-primary);
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            margin-right: 15px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+        
+        input[type="file"]::file-selector-button:hover {
+            background: var(--primary-dark);
+        }
+        
+        button {
+            background: var(--primary);
+            color: var(--on-primary);
+            border: none;
+            padding: 15px 30px;
+            font-size: 1.1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            width: 100%;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            letter-spacing: 1px;
+            font-weight: 500;
+            box-shadow: 0 4px 15px rgba(98, 0, 238, 0.5);
+        }
+        
+        button:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(98, 0, 238, 0.6);
+        }
+        
+        button::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 5px;
+            height: 5px;
+            background: rgba(255, 255, 255, 0.5);
+            opacity: 0;
+            border-radius: 100%;
+            transform: scale(1, 1) translate(-50%);
+            transform-origin: 50% 50%;
+        }
+        
+        button:focus:not(:active)::after {
+            animation: ripple 1s ease-out;
+        }
+        
+        @keyframes ripple {
+            0% {
+                transform: scale(0, 0);
+                opacity: 0.5;
+            }
+            100% {
+                transform: scale(100, 100);
+                opacity: 0;
+            }
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            margin-top: 20px;
+        }
+        
+        .loading i {
+            color: var(--primary-light);
+            font-size: 2rem;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .error {
+            background: var(--error);
+            color: var(--on-error);
+            padding: 10px 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.9rem;
+        }
+        
+        .file-count {
+            color: var(--primary-light);
+            margin-left: 10px;
+            font-size: 0.9rem;
+            display: none;
+        }
+        
+        .btn-secondary {
+            background: var(--secondary);
+            color: var(--on-secondary);
+            margin-top: 20px;
+        }
+        
+        .btn-secondary:hover {
+            background: #02b3a3;
+            box-shadow: 0 6px 20px rgba(3, 218, 198, 0.6);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Resume Skills Analyzer</h1>
+        
+        <div class="card">
+            {% if error %}
+                <div class="error">{{ error }}</div>
+            {% endif %}
+            
+            <form action="/parse" method="post" enctype="multipart/form-data" id="resumeForm">
+                <div class="form-group">
+                    <label for="tags">Required Skills (comma-separated)</label>
+                    <input type="text" id="tags" name="tags" placeholder="Python, Java, SQL, React, AWS..." required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="resumes">Upload Resume(s) (PDF/DOCX)</label>
+                    <input type="file" id="resumes" name="resumes" accept=".pdf,.docx" multiple required>
+                    <span id="fileCount" class="file-count">0 files selected</span>
+                </div>
+                
+                <button type="submit">
+                    <i class="fas fa-search"></i> Analyze Resume(s)
+                </button>
+            </form>
+            
+            <div class="loading" id="loadingIndicator">
+                <i class="fas fa-circle-notch"></i>
+                <p>Processing resume(s)... Please wait</p>
+            </div>
+            
+        </div>
+        
+        <div class="footer">
+            Resume Skills Analyzer • by Unsa Memon
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('resumeForm').addEventListener('submit', function() {
+            document.getElementById('loadingIndicator').style.display = 'block';
+        });
+        
+        // Display selected file count
+        document.getElementById('resumes').addEventListener('change', function(e) {
+            const fileCountSpan = document.getElementById('fileCount');
+            const numFiles = e.target.files.length;
+            
+            if (numFiles > 0) {
+                fileCountSpan.textContent = numFiles === 1 
+                    ? '1 file selected' 
+                    : numFiles + ' files selected';
+                fileCountSpan.style.display = 'inline';
+            } else {
+                fileCountSpan.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>

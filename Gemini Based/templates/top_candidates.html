@@ -1,0 +1,529 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Top Candidates</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #6200ee;
+            --primary-dark: #3700b3;
+            --primary-light: #bb86fc;
+            --secondary: #03dac6;
+            --background: #121212;
+            --surface: rgba(255, 255, 255, 0.1);
+            --error: #cf6679;
+            --success: #4caf50;
+            --warning: #ff9800;
+            --on-primary: #ffffff;
+            --on-secondary: #000000;
+            --on-background: #ffffff;
+            --on-surface: #ffffff;
+            --on-error: #000000;
+        }
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Roboto', Arial, sans-serif;
+            line-height: 1.6;
+            color: var(--on-background);
+            background: linear-gradient(45deg, #121212, #1e1e1e);
+            min-height: 100vh;
+            padding: 40px 20px;
+        }
+        
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            font-weight: 300;
+            font-size: 2.5rem;
+            text-align: center;
+            margin-bottom: 30px;
+            color: var(--primary-light);
+            text-shadow: 0 0 10px rgba(187, 134, 252, 0.3);
+        }
+        
+        h2 {
+            font-weight: 400;
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+            color: var(--secondary);
+        }
+        
+        .card {
+            background: var(--surface);
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3), 
+                        0 1px 1px rgba(255, 255, 255, 0.1) inset;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(
+                to bottom right,
+                rgba(255, 255, 255, 0.08) 0%,
+                rgba(255, 255, 255, 0.03) 25%,
+                rgba(255, 255, 255, 0) 50%
+            );
+            pointer-events: none;
+            transform: rotate(-30deg);
+            z-index: 0;
+        }
+        
+        .profile {
+            display: flex;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+        
+        .profile-icon {
+            width: 80px;
+            height: 80px;
+            background: var(--primary);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-right: 20px;
+            box-shadow: 0 5px 15px rgba(98, 0, 238, 0.5);
+        }
+        
+        .profile-icon i {
+            font-size: 2.5rem;
+            color: var(--on-primary);
+        }
+        
+        .profile-info {
+            flex: 1;
+        }
+        
+        .profile-info h2 {
+            margin-bottom: 5px;
+        }
+        
+        .profile-info p {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 1.1rem;
+            margin-bottom: 5px;
+        }
+        
+        .status {
+            font-size: 1.2rem;
+            padding: 10px 20px;
+            border-radius: 30px;
+            display: inline-block;
+            margin-bottom: 30px;
+        }
+        
+        .status.approved {
+            background: rgba(76, 175, 80, 0.2);
+            color: var(--success);
+            border: 1px solid rgba(76, 175, 80, 0.3);
+        }
+        
+        .status.rejected {
+            background: rgba(207, 102, 121, 0.2);
+            color: var(--error);
+            border: 1px solid rgba(207, 102, 121, 0.3);
+        }
+        
+        .skills-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 30px;
+        }
+        
+        .skills-table th,
+        .skills-table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .skills-table th {
+            color: var(--secondary);
+            font-weight: 500;
+            letter-spacing: 0.5px;
+        }
+        
+        .match-icon {
+            font-size: 1.2rem;
+        }
+        
+        .match-icon.yes {
+            color: var(--success);
+        }
+        
+        .match-icon.no {
+            color: var(--error);
+        }
+        
+        .btn {
+            background: var(--primary);
+            color: var(--on-primary);
+            border: none;
+            padding: 12px 25px;
+            font-size: 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+            box-shadow: 0 4px 15px rgba(98, 0, 238, 0.3);
+            margin-right: 10px;
+            margin-bottom: 10px;
+        }
+        
+        .btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(98, 0, 238, 0.4);
+        }
+        
+        .btn-back {
+            background: transparent;
+            border: 1px solid var(--primary-light);
+            color: var(--primary-light);
+            box-shadow: none;
+        }
+        
+        .btn-back:hover {
+            background: rgba(187, 134, 252, 0.1);
+            box-shadow: none;
+        }
+        
+        .btn i {
+            margin-right: 8px;
+        }
+        
+        .no-candidates {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 1.2rem;
+            padding: 20px;
+        }
+        
+        .footer {
+            text-align: center;
+            margin-top: 30px;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.9rem;
+        }
+        
+        .filter-controls {
+            background: var(--surface);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 30px;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: 0 5px 20px rgba(0, 0, 0, 0.2);
+        }
+        
+        .filter-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            margin-right: 20px;
+        }
+        
+        .filter-label {
+            font-size: 1rem;
+            color: var(--secondary);
+            margin-right: 10px;
+            font-weight: 500;
+        }
+        
+        .filter-select {
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 8px;
+            color: var(--on-background);
+            padding: 10px 15px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 120px;
+        }
+        
+        .filter-select:hover, .filter-select:focus {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: var(--primary-light);
+            outline: none;
+        }
+        
+        .filter-select option {
+            background: var(--background);
+            color: var(--on-background);
+        }
+        
+        .apply-btn {
+            background: var(--primary);
+            color: var(--on-primary);
+            border: none;
+            padding: 10px 20px;
+            font-size: 1rem;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(98, 0, 238, 0.3);
+        }
+        
+        .apply-btn:hover {
+            background: var(--primary-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(98, 0, 238, 0.4);
+        }
+        
+        .results-info {
+            color: var(--on-background);
+            font-size: 1rem;
+            opacity: 0.8;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        @media (max-width: 768px) {
+            .profile {
+                flex-direction: column;
+                text-align: center;
+            }
+            
+            .profile-icon {
+                margin-right: 0;
+                margin-bottom: 15px;
+            }
+            
+            .filter-controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            .filter-group {
+                margin-right: 0;
+                margin-bottom: 15px;
+                justify-content: space-between;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Top Candidates</h1>
+        
+        <!-- New filter controls -->
+        <div class="card filter-controls">
+            <div class="filter-group">
+                <label class="filter-label">Show top:</label>
+                <select id="limit-select" class="filter-select">
+                    <option value="3">3 candidates</option>
+                    <option value="5">5 candidates</option>
+                    <option value="10">10 candidates</option>
+                    <option value="all">All candidates</option>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label class="filter-label">Sort by:</label>
+                <select id="sort-select" class="filter-select">
+                    <option value="percentage-desc">Match % (High to Low)</option>
+                    <option value="percentage-asc">Match % (Low to High)</option>
+                    <option value="name-asc">Name (A to Z)</option>
+                    <option value="name-desc">Name (Z to A)</option>
+                </select>
+            </div>
+            
+            <button id="apply-filters" class="apply-btn">
+                <i class="fas fa-filter"></i> Apply Filters
+            </button>
+        </div>
+        
+        <div class="results-info">
+            Showing <span id="showing-count">0</span> out of <span id="total-count">0</span> candidates
+        </div>
+        
+        <div id="candidates-container">
+            {% if candidates %}
+                {% for candidate in candidates %}
+                <div class="card candidate-card">
+                    <div class="profile">
+                        <div class="profile-icon">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div class="profile-info">
+                            <h2>{{ candidate.name }}</h2>
+                            <p><i class="fas fa-envelope"></i> {{ candidate.email }}</p>
+                            <p><i class="fas fa-phone"></i> {{ candidate.phone }}</p>
+                            <p><i class="fas fa-map-marker-alt"></i> {{ candidate.address }}</p>
+                        </div>
+                    </div>
+                    
+                    <div class="status {% if candidate.approved %}approved{% else %}rejected{% endif %}">
+                        {% if candidate.approved %}
+                        <i class="fas fa-check-circle"></i> APPROVED
+                        {% else %}
+                        <i class="fas fa-times-circle"></i> REJECTED
+                        {% endif %}
+                        (<span class="match-percentage">{{ candidate.match_percentage }}</span>% Match)
+                    </div>
+                    
+                    <h2>Skills Assessment</h2>
+                    <table class="skills-table">
+                        <thead>
+                            <tr>
+                                <th>Skill</th>
+                                <th>Match Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for skill in candidate.skills %}
+                            <tr>
+                                <td>{{ skill.skill }}</td>
+                                <td>
+                                    {% if skill.present %}
+                                    <span class="match-icon yes"><i class="fas fa-check"></i> Yes</span>
+                                    {% else %}
+                                    <span class="match-icon no"><i class="fas fa-times"></i> No</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% endfor %}
+            {% else %}
+                <div class="card">
+                    <div class="no-candidates">
+                        <i class="fas fa-info-circle"></i> No candidates found.
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+        
+        <div class="card">
+            <a href="/" class="btn btn-back"><i class="fas fa-arrow-left"></i> Back to Search</a>
+        </div>
+        
+        <div class="footer">
+            Resume Skills Analyzer • by Unsa Memon
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Reference to elements
+            const limitSelect = document.getElementById('limit-select');
+            const sortSelect = document.getElementById('sort-select');
+            const applyButton = document.getElementById('apply-filters');
+            const candidatesContainer = document.getElementById('candidates-container');
+            const showingCountElement = document.getElementById('showing-count');
+            const totalCountElement = document.getElementById('total-count');
+            
+            // Get all candidate cards
+            const allCandidateCards = document.querySelectorAll('.candidate-card');
+            const totalCandidates = allCandidateCards.length;
+            
+            // Set the total count
+            totalCountElement.textContent = totalCandidates;
+            
+            // Default to showing all candidates on initial load
+            showingCountElement.textContent = totalCandidates;
+            
+            // Function to apply filters
+            function applyFilters() {
+                // Get selected values
+                const limitValue = limitSelect.value;
+                const sortValue = sortSelect.value;
+                
+                // Convert NodeList to Array for easier manipulation
+                let candidateCardsArray = Array.from(allCandidateCards);
+                
+                // Sort candidates
+                candidateCardsArray.sort((a, b) => {
+                    if (sortValue === 'percentage-desc') {
+                        const percentageA = parseInt(a.querySelector('.match-percentage').textContent);
+                        const percentageB = parseInt(b.querySelector('.match-percentage').textContent);
+                        return percentageB - percentageA;
+                    } else if (sortValue === 'percentage-asc') {
+                        const percentageA = parseInt(a.querySelector('.match-percentage').textContent);
+                        const percentageB = parseInt(b.querySelector('.match-percentage').textContent);
+                        return percentageA - percentageB;
+                    } else if (sortValue === 'name-asc') {
+                        const nameA = a.querySelector('h2').textContent.toLowerCase();
+                        const nameB = b.querySelector('h2').textContent.toLowerCase();
+                        return nameA.localeCompare(nameB);
+                    } else if (sortValue === 'name-desc') {
+                        const nameA = a.querySelector('h2').textContent.toLowerCase();
+                        const nameB = b.querySelector('h2').textContent.toLowerCase();
+                        return nameB.localeCompare(nameA);
+                    }
+                    return 0;
+                });
+                
+                // Determine how many to show
+                let limitNumber = totalCandidates;
+                if (limitValue !== 'all') {
+                    limitNumber = parseInt(limitValue);
+                }
+                
+                // Only show the filtered candidates
+                candidatesContainer.innerHTML = '';
+                let count = 0;
+                
+                candidateCardsArray.forEach((card, index) => {
+                    if (index < limitNumber) {
+                        candidatesContainer.appendChild(card);
+                        count++;
+                    }
+                });
+                
+                // If no candidates after filtering, show message
+                if (count === 0) {
+                    const noResults = document.createElement('div');
+                    noResults.className = 'card';
+                    noResults.innerHTML = `
+                        <div class="no-candidates">
+                            <i class="fas fa-info-circle"></i> No candidates found with current filters.
+                        </div>
+                    `;
+                    candidatesContainer.appendChild(noResults);
+                }
+                
+                // Update showing count
+                showingCountElement.textContent = count;
+            }
+            
+            // Apply filters when the button is clicked
+            applyButton.addEventListener('click', applyFilters);
+            
+            // Initial sort by percentage (high to low)
+            applyFilters();
+        });
+    </script>
+</body>
+</html>
