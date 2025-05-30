@@ -1,0 +1,47 @@
+
+body {
+    font-family: Arial, sans-serif;
+    text-align: center;
+    margin: 20px;
+}
+
+/* Bar Chart Styles */
+#bar_chart {
+    width: 60%;
+    margin: 20px auto;
+    display: block;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+/* Pie Chart Styles */
+#pie_chart {
+    width: 60%;
+    margin: 30px auto;
+    display: block;
+    border-radius: 8px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+h2 {
+    margin-top: -2px;
+}
+
+.button-group {
+    margin-top: 30px;
+}
+
+.button-group a {
+    display: inline-block;
+    margin: 0 10px;
+    padding: 10px 20px;
+    background-color: #186708;
+    color: white;
+    text-decoration: none;
+    border-radius: 6px;
+    transition: background-color 0.3s ease;
+}
+
+.button-group a:hover {
+    background-color: #23930d
+}
